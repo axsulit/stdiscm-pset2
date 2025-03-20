@@ -5,7 +5,10 @@
 #include <chrono>
 
 using namespace std;
+
 mutex partyMutex;
+mutex statusMutex;
+vector<string> instanceStatus;
 
 // Helper function to handle input
 int getInput(const string& prompt, const string& errorMessage, int condition) {
@@ -30,10 +33,18 @@ int getInput(const string& prompt, const string& errorMessage, int condition) {
     }
 }
 
+void printInstanceStatus() {
+    lock_guard<mutex> lock(statusMutex);
+    cout << "\nInstance Status:\n";
+    for (size_t i = 0; i < instanceStatus.size(); i++) {
+        cout << "Instance " << (i + 1) << ": " << instanceStatus[i] << endl;
+    }
+}
+
 void runDungeon(int instanceID, int minTime, int maxTime) {
     int dungeonTime = minTime + (rand() % (maxTime - minTime + 1)); // Random dungeon completion time
 
-    { 
+    {
         lock_guard<mutex> lock(partyMutex);
         cout << "Instance " << instanceID << " is now active. Estimated completion time: "
             << dungeonTime << " seconds." << endl;
@@ -41,11 +52,21 @@ void runDungeon(int instanceID, int minTime, int maxTime) {
 
     this_thread::sleep_for(chrono::seconds(dungeonTime)); // Simulate dungeon duration
 
-    { 
+    // Mark the instance as empty after completion
+    {
+        lock_guard<mutex> lock(statusMutex);
+        instanceStatus[instanceID - 1] = "empty";
+    }
+
+    {
         lock_guard<mutex> lock(partyMutex);
         cout << "Instance " << instanceID << " has completed the dungeon run." << endl;
     }
+
+    printInstanceStatus();
 }
+
+
 
 
 int main()
@@ -66,10 +87,12 @@ int main()
 
 	vector<thread> partyInstances;
     
-    while (numTanks>=1 && numHealers>=1 && numDPS>=3) {
+    instanceStatus.resize(numInstances, "empty");
+
+    while (numTanks >= 1 && numHealers >= 1 && numDPS >= 3) {
         int instanceID;
 
-        { 
+        {
             lock_guard<mutex> lock(partyMutex);
 
             if (partyInstances.size() >= numInstances) {
@@ -78,13 +101,21 @@ int main()
 
             // Form a party
             numTanks--; numHealers--; numDPS -= 3;
-            instanceID = partyInstances.size() + 1; // Get the instance ID
+            instanceID = partyInstances.size() + 1;
+
+            // Update instanceStatus immediately before starting the dungeon
+            {
+                lock_guard<mutex> lock(statusMutex);
+                instanceStatus[instanceID - 1] = "active"; // Mark as active
+            }
 
             cout << "A new party has entered Instance " << instanceID << "." << endl;
-        } 
+        }
 
         // Start dungeon instance
         partyInstances.emplace_back(runDungeon, instanceID, minTime, maxTime);
+
+        printInstanceStatus();
     }
 
     for (auto& t : partyInstances) if (t.joinable()) t.join();
