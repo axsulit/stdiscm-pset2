@@ -1,5 +1,11 @@
 #include <iostream>
+#include <thread>
+#include <mutex>
+#include <vector>
+#include <chrono>
+
 using namespace std;
+mutex partyMutex;
 
 // Helper function to handle input
 int getInput(const string& prompt, const string& errorMessage, int condition) {
@@ -24,6 +30,10 @@ int getInput(const string& prompt, const string& errorMessage, int condition) {
     }
 }
 
+void runDungeon(int instanceID, int minTime, int maxTime) {
+	int dungeonTime = minTime + (rand() % (maxTime - minTime + 1)); // Random dungeon completion time
+    this_thread::sleep_for(chrono::seconds(dungeonTime)); // Simulate dungeon duration
+
 int main()
 {
     int numInstances = getInput("Number of party instances: ", "Invalid input! Please enter a valid number.", 1);
@@ -39,6 +49,13 @@ int main()
 
     int minTime = getInput("Minimum dungeon completion time: ", "Invalid input! Please enter a valid number.", 0);
     int maxTime = getInput("Maximum dungeon completion time: ", "Invalid input! Please enter a valid number.", 0);
+
+	vector<thread> partyInstances;
+    
+	while (numTanks>=1 && numHealers>=1 && numDPS>=3) {
+		lock_guard<mutex> lock(partyMutex);
+
+	}
 
 	return 0;
 }

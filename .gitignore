@@ -1,1 +1,4 @@
 *.user
+/.vs
+/stdiscm-pset2
+/x64
