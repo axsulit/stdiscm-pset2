@@ -185,11 +185,15 @@ void DungeonManager::setDungeonParameters() {
 
 void DungeonManager::printDungeonParameters() {
 	cout << "====== Dungeon Configuration ======" << endl;
-	cout << "Dungeons Online: " << numInstances << endl;
-	cout << "Tanks in Queue: " << numTanks << endl;
-	cout << "Healers in Queue: " << numHealers << endl;
-	cout << "DPS in Queue: " << numDPS << endl;
-	cout << "Clear Time: " << minDungeonTime << " seconds - " << maxDungeonTime << " seconds" << endl;
+	cout << "Dungeons Online (n): " << numInstances << endl;
+	cout << "Tanks in Queue (t): " << numTanks << endl;
+	cout << "Healers in Queue (h): " << numHealers << endl;
+	cout << "DPS in Queue (d): " << numDPS << endl;
+	if (minDungeonTime == maxDungeonTime) {
+		cout << "Clear Time (t1,t2): " << minDungeonTime << " seconds" << endl;
+	}
+	else
+		cout << "Clear Time (t1,t2): " << minDungeonTime << " seconds - " << maxDungeonTime << " seconds" << endl;
 	cout << "===================================" << endl << endl;
 }
 
