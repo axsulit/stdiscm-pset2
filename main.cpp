@@ -66,10 +66,28 @@ int main()
 
 	vector<thread> partyInstances;
     
-	while (numTanks>=1 && numHealers>=1 && numDPS>=3) {
-		lock_guard<mutex> lock(partyMutex);
+    while (numTanks>=1 && numHealers>=1 && numDPS>=3) {
+        int instanceID;
 
-	}
+        { 
+            lock_guard<mutex> lock(partyMutex);
+
+            if (partyInstances.size() >= numInstances) {
+                continue; // If all instances are full, keep waiting
+            }
+
+            // Form a party
+            numTanks--; numHealers--; numDPS -= 3;
+            instanceID = partyInstances.size() + 1; // Get the instance ID
+
+            cout << "A new party has entered Instance " << instanceID << "." << endl;
+        } 
+
+        // Start dungeon instance
+        partyInstances.emplace_back(runDungeon, instanceID, minTime, maxTime);
+    }
+
+    for (auto& t : partyInstances) if (t.joinable()) t.join();
 
 	return 0;
 }
