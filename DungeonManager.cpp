@@ -7,12 +7,14 @@
 #include <chrono>
 #include <limits>
 #include <stdexcept>
+#include <algorithm>
 
 using namespace std;
 
 mutex partyMutex;
 mutex statusMutex;
-vector<pair<string, int>> instanceStatus;
+vector<tuple<string, int, int>> instanceStatus; // Status, Time, Party ID
+
 
 DungeonManager::DungeonManager() : numInstances(-1), numTanks(-1), numHealers(-1), numDPS(-1), minDungeonTime(-1), maxDungeonTime(-1), partiesInQueue(-1) {}
 
@@ -65,7 +67,7 @@ void DungeonManager::setDungeonParameters() {
 
 void DungeonManager::printDungeonParameters() {
 	cout << "====== Dungeon Configuration ======" << endl;
-	cout << "Dungeon Instances Online: " << numInstances << endl;
+	cout << "Dungeons Online: " << numInstances << endl;
 	cout << "Tanks in Queue: " << numTanks << endl;
 	cout << "Healers in Queue: " << numHealers << endl;
 	cout << "DPS in Queue: " << numDPS << endl;
@@ -90,46 +92,44 @@ int DungeonManager::createPartyQueue() {
 
 void DungeonManager::startDungeonInstances() {
 	vector<thread> partyInstances;
-	instanceStatus.resize(numInstances, { "EMPTY", 0 });
+	instanceStatus.resize(numInstances, { "EMPTY", 0, -1 });
 
-	cout << "\n===========================================" << endl;
-	cout << "      *** DUNGEON RAID STATUS ***" << endl;
-	cout << "===========================================\n" << endl;
+	cout << "\n===================================" << endl;
+	cout << "    *** DUNGEON RAID STATUS ***" << endl;
+	cout << "===================================\n" << endl;
 	cout << "[Deploying adventurers into the dungeons...]\n" << endl;
 
-	while (partiesInQueue > 0 && partyInstances.size() < numInstances) {
+	int partyCounter = 1; 
+
+	while (partiesInQueue > 0) {
 		lock_guard<mutex> lock(partyMutex);
 
-		int availableSpots = numInstances - partyInstances.size();
-		int partiesToStart = min(partiesInQueue, availableSpots);
+		for (int i = 0; i < numInstances && partiesInQueue > 0; i++) {
+			if (get<0>(instanceStatus[i]) == "EMPTY") { 
+				int instanceID = i + 1;
+				partiesInQueue--;
 
-		for (int i = 0; i < partiesToStart; i++) {
-			int instanceID = partyInstances.size() + 1;
-			partiesInQueue--;
+				// Assign random dungeon completion time
+				int dungeonTime = minDungeonTime + (rand() % (maxDungeonTime - minDungeonTime + 1));
 
-			// Assign a random dungeon completion time
-			int dungeonTime = minDungeonTime + (rand() % (maxDungeonTime - minDungeonTime + 1));
+				//  Update instanceStatus
+				{
+					lock_guard<mutex> lock(statusMutex);
+					instanceStatus[i] = { "ACTIVE", dungeonTime, partyCounter };
+					//cout << "> Party " << partyCounter << " enters... (ETA: " << dungeonTime << " sec)" << endl;
+				}
 
-			// Update instance status before launching thread
-			{
-				lock_guard<mutex> lock(statusMutex);
-				instanceStatus[instanceID - 1] = { "ACTIVE", dungeonTime };
+				// Start the dungeon in a new thread
+				partyInstances.emplace_back(&DungeonManager::runDungeon, this, instanceID, dungeonTime);
+				partyCounter++;  
 			}
-
-			// Flavorful dungeon entry log
-			cout << "> Party " << instanceID << " enters \"The Taft Abyss\" (ETA: "
-				<< dungeonTime << " sec)" << endl;
-
-			// Start the dungeon in a new thread
-			partyInstances.emplace_back(&DungeonManager::runDungeon, this, instanceID, dungeonTime);
 		}
 
-		// Print instance status only once
-		printInstanceStatus();
+		//printInstanceStatus();
 		this_thread::sleep_for(chrono::seconds(1));
 	}
 
-	// Ensure all dungeon threads complete
+	//  Join finished threads before removing them
 	for (auto& t : partyInstances) {
 		if (t.joinable()) {
 			t.join();
@@ -137,40 +137,40 @@ void DungeonManager::startDungeonInstances() {
 	}
 
 	cout << "\n-------------------------------------------" << endl;
-	cout << "     The adventurers return victorious! " << endl;
+	cout << "   The adventurers return victorious!" << endl;
 	cout << "===========================================\n" << endl;
 }
 
 
-
 void DungeonManager::runDungeon(int instanceID, int dungeonTime) {
 	this_thread::sleep_for(chrono::seconds(dungeonTime)); // Simulate dungeon duration
+	int partyID; 
+
+	printInstanceStatus();
 
 	{
 		lock_guard<mutex> lock(statusMutex);
-		instanceStatus[instanceID - 1] = { "EMPTY", 0 };
+		partyID = get<2>(instanceStatus[instanceID - 1]);  
+		instanceStatus[instanceID - 1] = { "EMPTY", 0, -1 }; 
+		cout << "> Party " << partyID << " has conquered the dungeon in " << dungeonTime << " seconds!" << endl;
 	}
-
-	// More immersive completion log
-	cout << "\nParty " << instanceID << " has conquered the dungeon! " << endl;
 }
 
 void DungeonManager::printInstanceStatus() {
 	lock_guard<mutex> lock(statusMutex);
 
 	cout << "\n-------------------------------------------" << endl;
-	cout << "       ACTIVE DUNGEON INSTANCES" << endl;
+	cout << "       ONLINE DUNGEON INSTANCES" << endl;  
 	cout << "-------------------------------------------" << endl;
 
 	for (size_t i = 0; i < instanceStatus.size(); i++) {
-		if (instanceStatus[i].first == "ACTIVE") {
-			cout << "[Instance " << (i + 1) << "] Party " << (i + 1)
-				<< " - Estimated completion: " << instanceStatus[i].second << " sec" << endl;
+		if (get<0>(instanceStatus[i]) == "ACTIVE") { 
+			cout << "[Dungeon " << (i + 1) << "] ACTIVE - Party " << get<2>(instanceStatus[i]) << endl;
 		}
 		else {
-			cout << "[Instance " << (i + 1) << "] [EMPTY]" << endl;
+			cout << "[Dungeon " << (i + 1) << "] EMPTY" << endl;
 		}
 	}
 
-	cout << "\n-------------------------------------------" << endl;
+	cout << "-------------------------------------------\n" << endl;
 }

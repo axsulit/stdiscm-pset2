@@ -22,8 +22,8 @@ int main()
 	if (dm.createPartyQueue() == -1) {
 		return -1;
 	}
+	this_thread::sleep_for(chrono::seconds(1));
 
 	dm.startDungeonInstances();
-
 	return 0;
 }
