@@ -22,5 +22,6 @@ private:
 
 	void runDungeon(int instanceID, int dungeonTime);
 	void printInstanceStatus();
+	int activeDungeons();
 };
 
