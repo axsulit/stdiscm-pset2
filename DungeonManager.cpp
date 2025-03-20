@@ -90,9 +90,12 @@ int DungeonManager::createPartyQueue() {
 
 void DungeonManager::startDungeonInstances() {
 	vector<thread> partyInstances;
-	instanceStatus.resize(numInstances, { "empty", 0 });
+	instanceStatus.resize(numInstances, { "EMPTY", 0 });
 
-	cout << "Deploying adventurers into the dungeons... \n" << endl;
+	cout << "\n===========================================" << endl;
+	cout << "      *** DUNGEON RAID STATUS ***" << endl;
+	cout << "===========================================\n" << endl;
+	cout << "[Deploying adventurers into the dungeons...]\n" << endl;
 
 	while (partiesInQueue > 0 && partyInstances.size() < numInstances) {
 		lock_guard<mutex> lock(partyMutex);
@@ -102,36 +105,42 @@ void DungeonManager::startDungeonInstances() {
 
 		for (int i = 0; i < partiesToStart; i++) {
 			int instanceID = partyInstances.size() + 1;
-			partiesInQueue--; // Reduce queue count
+			partiesInQueue--;
 
-			// Assign random dungeon completion time
+			// Assign a random dungeon completion time
 			int dungeonTime = minDungeonTime + (rand() % (maxDungeonTime - minDungeonTime + 1));
 
-			// Update instance status
+			// Update instance status before launching thread
 			{
 				lock_guard<mutex> lock(statusMutex);
-				instanceStatus[instanceID - 1] = { "active", dungeonTime };
+				instanceStatus[instanceID - 1] = { "ACTIVE", dungeonTime };
 			}
 
-			// Start dungeon in new thread
-			partyInstances.emplace_back(&DungeonManager::runDungeon, this, instanceID, dungeonTime);
+			// Flavorful dungeon entry log
+			cout << "> Party " << instanceID << " enters \"The Taft Abyss\" (ETA: "
+				<< dungeonTime << " sec)" << endl;
 
-			cout << "Party " << instanceID << " has entered the dungeon! Estimated completion: "
-				<< dungeonTime << " seconds." << endl;
+			// Start the dungeon in a new thread
+			partyInstances.emplace_back(&DungeonManager::runDungeon, this, instanceID, dungeonTime);
 		}
 
+		// Print instance status only once
 		printInstanceStatus();
 		this_thread::sleep_for(chrono::seconds(1));
 	}
 
+	// Ensure all dungeon threads complete
 	for (auto& t : partyInstances) {
 		if (t.joinable()) {
 			t.join();
 		}
 	}
 
-	cout << "\nAll dungeon instances have completed! The heroes return victorious!\n" << endl;
+	cout << "\n-------------------------------------------" << endl;
+	cout << "     The adventurers return victorious! " << endl;
+	cout << "===========================================\n" << endl;
 }
+
 
 
 void DungeonManager::runDungeon(int instanceID, int dungeonTime) {
@@ -139,23 +148,29 @@ void DungeonManager::runDungeon(int instanceID, int dungeonTime) {
 
 	{
 		lock_guard<mutex> lock(statusMutex);
-		instanceStatus[instanceID - 1] = { "empty", 0 }; 
+		instanceStatus[instanceID - 1] = { "EMPTY", 0 };
 	}
 
-	cout << "Party " << instanceID << " has completed the dungeon!\n";
-	printInstanceStatus();
+	// More immersive completion log
+	cout << "\nParty " << instanceID << " has conquered the dungeon! " << endl;
 }
 
 void DungeonManager::printInstanceStatus() {
-    lock_guard<mutex> lock(statusMutex);
-    cout << "\nInstance Status:\n";
-    for (size_t i = 0; i < instanceStatus.size(); i++) {
-        if (instanceStatus[i].first == "active") {
-            cout << "Instance " << (i + 1) << ": active (estimated completion time: "
-                << instanceStatus[i].second << " seconds)" << endl;
-        }
-        else {
-            cout << "Instance " << (i + 1) << ": empty" << endl;
-        }
-    }
+	lock_guard<mutex> lock(statusMutex);
+
+	cout << "\n-------------------------------------------" << endl;
+	cout << "       ACTIVE DUNGEON INSTANCES" << endl;
+	cout << "-------------------------------------------" << endl;
+
+	for (size_t i = 0; i < instanceStatus.size(); i++) {
+		if (instanceStatus[i].first == "ACTIVE") {
+			cout << "[Instance " << (i + 1) << "] Party " << (i + 1)
+				<< " - Estimated completion: " << instanceStatus[i].second << " sec" << endl;
+		}
+		else {
+			cout << "[Instance " << (i + 1) << "] [EMPTY]" << endl;
+		}
+	}
+
+	cout << "\n-------------------------------------------" << endl;
 }
