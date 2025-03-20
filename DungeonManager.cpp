@@ -97,8 +97,11 @@ void DungeonManager::runDungeon(int instanceID, int dungeonTime) {
 		totalTimePerInstance[instanceID - 1] += dungeonTime;
 	}
 
-	cout << "> Party " << partyID << " finished dungeon " << instanceID << " in " << dungeonTime << " secs!" << endl;
-	printInstanceStatus();
+	{
+		lock_guard<mutex> lock(printMutex);
+		cout << "> Party " << partyID << " finished dungeon " << instanceID << " in " << dungeonTime << " secs!" << endl;
+		printInstanceStatus();
+	}
 }
 
 void DungeonManager::printFinalSummary() {
@@ -121,7 +124,6 @@ void DungeonManager::printFinalSummary() {
 }
 
 void DungeonManager::printInstanceStatus() {
-	lock_guard<mutex> lock(printMutex);
 	cout << "-----------------------------------" << endl;
 	for (size_t i = 0; i < instanceStatus.size(); i++) {
 		if (get<0>(instanceStatus[i]) == "ACTIVE") {
