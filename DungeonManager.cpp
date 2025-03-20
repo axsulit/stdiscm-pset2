@@ -64,6 +64,11 @@ void DungeonManager::startDungeonInstances() {
 		}
 	}
 
+	// Check again for active dungeons
+	while (activeDungeons() > 0) {
+		this_thread::sleep_for(chrono::milliseconds(100));
+	}
+
 	cout << "\n-------------------------------------------" << endl;
 	cout << "   The adventurers return victorious!" << endl;
 	cout << "===========================================\n" << endl;
