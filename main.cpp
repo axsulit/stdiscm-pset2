@@ -31,8 +31,22 @@ int getInput(const string& prompt, const string& errorMessage, int condition) {
 }
 
 void runDungeon(int instanceID, int minTime, int maxTime) {
-	int dungeonTime = minTime + (rand() % (maxTime - minTime + 1)); // Random dungeon completion time
+    int dungeonTime = minTime + (rand() % (maxTime - minTime + 1)); // Random dungeon completion time
+
+    { 
+        lock_guard<mutex> lock(partyMutex);
+        cout << "Instance " << instanceID << " is now active. Estimated completion time: "
+            << dungeonTime << " seconds." << endl;
+    }
+
     this_thread::sleep_for(chrono::seconds(dungeonTime)); // Simulate dungeon duration
+
+    { 
+        lock_guard<mutex> lock(partyMutex);
+        cout << "Instance " << instanceID << " has completed the dungeon run." << endl;
+    }
+}
+
 
 int main()
 {
