@@ -35,7 +35,7 @@ void DungeonManager::startDungeonInstances() {
 
 	cout << "    *** DUNGEON RAID STATUS ***" << endl;
 	cout << "===================================\n" << endl;
-	cout << "[Deploying adventurers into the dungeons...]\n" << endl;
+	cout << "[Deploying adventurers...]\n" << endl;
 
 	int partyCounter = 1;
 
@@ -112,7 +112,7 @@ void DungeonManager::printFinalSummary() {
 		cout << "[Dungeon " << (i + 1) << "]" << endl;
 		cout << "  - Parties Served: " << partiesServedPerInstance[i] << endl;
 		cout << "  - Total Time Served: " << totalTimePerInstance[i] << " seconds" << endl;
-		cout << "----------------------------------------" << endl;
+		cout << "-----------------------------------" << endl;
 	}
 
 	// General Summary
@@ -202,7 +202,13 @@ int DungeonManager::createPartyQueue() {
 	numDPS -= (partiesInQueue * 3);
 
 	if (partiesInQueue > 0) {
-		cout << partiesInQueue << " adventuring parties have been assembled and stand ready to enter the dungeons." << endl << endl;
+		cout << partiesInQueue << " parties have been assembled!" << endl << endl;
+
+		cout << "=== Leftover Players ===" << endl;
+		cout << "Unassigned Tanks: " << numTanks << endl;
+		cout << "Unassigned Healers: " << numHealers << endl;
+		cout << "Unassigned DPS: " << numDPS << endl << endl;
+
 		cout << "===================================" << endl;
 		return 0;
 	}
