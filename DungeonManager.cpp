@@ -74,9 +74,7 @@ void DungeonManager::startDungeonInstances() {
 	while (activeDungeons() > 0) {
 		this_thread::sleep_for(chrono::milliseconds(100));
 	}
-
-	cout << "\n-----------------------------------" << endl;
-	cout << "  The adventurers are victorious!" << endl;
+	cout << "\n  The adventurers are victorious!" << endl << endl;
 	cout << "===================================\n" << endl;
 
 	printFinalSummary();
@@ -99,7 +97,7 @@ void DungeonManager::runDungeon(int instanceID, int dungeonTime) {
 		totalTimePerInstance[instanceID - 1] += dungeonTime;
 	}
 
-	cout << "> Party " << partyID << " has conquered dungeon " << instanceID << " in " << dungeonTime << " seconds!" << endl;
+	cout << "> Party " << partyID << " finished dungeon " << instanceID << " in " << dungeonTime << " secs!" << endl;
 	printInstanceStatus();
 }
 
