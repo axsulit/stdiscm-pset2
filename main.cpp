@@ -8,7 +8,7 @@ using namespace std;
 
 mutex partyMutex;
 mutex statusMutex;
-vector<string> instanceStatus;
+vector<pair<string, int>> instanceStatus;
 
 // Helper function to handle input
 int getInput(const string& prompt, const string& errorMessage, int condition) {
@@ -37,7 +37,13 @@ void printInstanceStatus() {
     lock_guard<mutex> lock(statusMutex);
     cout << "\nInstance Status:\n";
     for (size_t i = 0; i < instanceStatus.size(); i++) {
-        cout << "Instance " << (i + 1) << ": " << instanceStatus[i] << endl;
+        if (instanceStatus[i].first == "active") {
+            cout << "Instance " << (i + 1) << ": active (estimated completion time: "
+                << instanceStatus[i].second << " seconds)" << endl;
+        }
+        else {
+            cout << "Instance " << (i + 1) << ": empty" << endl;
+        }
     }
 }
 
@@ -45,29 +51,19 @@ void runDungeon(int instanceID, int minTime, int maxTime) {
     int dungeonTime = minTime + (rand() % (maxTime - minTime + 1)); // Random dungeon completion time
 
     {
-        lock_guard<mutex> lock(partyMutex);
-        cout << "Instance " << instanceID << " is now active. Estimated completion time: "
-            << dungeonTime << " seconds." << endl;
+        lock_guard<mutex> lock(statusMutex);
+        instanceStatus[instanceID - 1] = { "active", dungeonTime }; // Store estimated time
     }
 
     this_thread::sleep_for(chrono::seconds(dungeonTime)); // Simulate dungeon duration
 
-    // Mark the instance as empty after completion
     {
         lock_guard<mutex> lock(statusMutex);
-        instanceStatus[instanceID - 1] = "empty";
-    }
-
-    {
-        lock_guard<mutex> lock(partyMutex);
-        cout << "Instance " << instanceID << " has completed the dungeon run." << endl;
+        instanceStatus[instanceID - 1] = { "empty", 0 }; // Mark as empty
     }
 
     printInstanceStatus();
 }
-
-
-
 
 int main()
 {
@@ -86,11 +82,12 @@ int main()
     int maxTime = getInput("Maximum dungeon completion time: ", "Invalid input! Please enter a valid number.", 0);
 
 	vector<thread> partyInstances;
-    
-    instanceStatus.resize(numInstances, "empty");
+
+	instanceStatus.resize(numInstances, { "empty", 0 }); // Initialize instance status
 
     while (numTanks >= 1 && numHealers >= 1 && numDPS >= 3) {
         int instanceID;
+        int dungeonTime = minTime + (rand() % (maxTime - minTime + 1)); // Generate estimated time
 
         {
             lock_guard<mutex> lock(partyMutex);
@@ -99,23 +96,20 @@ int main()
                 continue; // If all instances are full, keep waiting
             }
 
-            // Form a party
             numTanks--; numHealers--; numDPS -= 3;
             instanceID = partyInstances.size() + 1;
 
-            // Update instanceStatus immediately before starting the dungeon
             {
                 lock_guard<mutex> lock(statusMutex);
-                instanceStatus[instanceID - 1] = "active"; // Mark as active
+                instanceStatus[instanceID - 1] = { "active", dungeonTime }; // Store estimated time
             }
 
-            cout << "A new party has entered Instance " << instanceID << "." << endl;
+            cout << endl << "A new party has entered Instance " << instanceID << "." << endl;
         }
 
-        // Start dungeon instance
         partyInstances.emplace_back(runDungeon, instanceID, minTime, maxTime);
 
-        printInstanceStatus();
+        printInstanceStatus(); // Print the updated status
     }
 
     for (auto& t : partyInstances) if (t.joinable()) t.join();
