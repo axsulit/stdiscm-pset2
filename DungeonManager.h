@@ -17,8 +17,8 @@ private:
 	int numTanks;
 	int numHealers;
 	int numDPS;
-	int minDungeonTime; // TODO: convert to time
-	int maxDungeonTime; // TODO: convert to time
+	int minDungeonTime; 
+	int maxDungeonTime; 
 	int partiesInQueue;
 	int totalCompletedParties;
 	int totalTimeServed;
