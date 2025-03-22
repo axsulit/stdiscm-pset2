@@ -136,18 +136,30 @@ void DungeonManager::printInstanceStatus() {
 	cout << "-----------------------------------" << endl;
 }
 
+#include <cctype>  // For isdigit
+
 int getInput(const string& prompt, const string& errorMessage, int condition) {
-	int option;
+	string input;
 	while (true) {
 		try {
 			cout << prompt;
-			cin >> option;
-			if (cin.fail()) {
-				throw invalid_argument("Invalid input!");
+			cin >> input;  // Read input as string
+
+			// Check if the input contains only digits
+			if (input.empty() || !all_of(input.begin(), input.end(), ::isdigit)) {
+				throw invalid_argument("Invalid input! Please enter a valid number.");
 			}
+
+			// Convert string to integer using stringstream
+			stringstream ss(input);
+			int option;
+			ss >> option;
+
+			// Check if the input is less than the required condition
 			if (option < condition) {
-				throw invalid_argument("Invalid input! Please enter a positive number.");
+				throw invalid_argument("Invalid input! Please enter a number >= " + to_string(condition));
 			}
+
 			return option;
 		}
 		catch (const exception& e) {
@@ -158,23 +170,24 @@ int getInput(const string& prompt, const string& errorMessage, int condition) {
 	}
 }
 
+
 void DungeonManager::setDungeonParameters() {
 	cout << "=== Welcome to the Dungeon Queue System ===" << endl << endl;
 
 	numInstances = getInput("How many dungeon instances can run at the same time?\n > ",
-		"Invalid choice. Please enter a valid number.", 1);
+		"Invalid choice. Please enter a valid number >= 1.", 1);
 
 	numTanks = getInput("How many Tanks are waiting in the queue?\n > ",
-		"Invalid choice. Please enter a valid number.", 0);
+		"Invalid choice. Please enter a valid number >= 0.", 0);
 
 	numHealers = getInput("How many Healers are waiting in the queue?\n > ",
-		"Invalid choice. Please enter a valid number.", 0);
+		"Invalid choice. Please enter a valid number >= 0.", 0);
 
 	numDPS = getInput("How many DPS are waiting in the queue?\n > ",
-		"Invalid choice. Please enter a valid number.", 0);
+		"Invalid choice. Please enter a valid number >=0.", 0);
 
 	minDungeonTime = getInput("What is the fastest possible dungeon clear time (in seconds)?\n > ",
-		"Invalid input. Enter a valid time.", 1);
+		"Invalid input. Enter a valid time >= 0.", 0);
 
 	maxDungeonTime = getInput("What is the longest a dungeon can take to complete (in seconds)?\n > ",
 		"Invalid input. The maximum time must be at least the minimum time.",
